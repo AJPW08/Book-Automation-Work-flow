@@ -1,0 +1,49 @@
+// --- Start of Code Node ---
+
+// Strings to find and replace
+const targetString = "Project Gutenberg";
+const replacementString = "Wisdom ebooks Club";
+
+// Prepare an array for all processed items
+const outputItems = [];
+
+// Loop through all input items
+for (const item of $input.all()) {
+
+  // The text content is stored in `data`
+  const originalText = item.json.data;
+
+  // Skip empty or invalid data
+  if (!originalText || typeof originalText !== "string") continue;
+
+  // Replace all instances (case insensitive)
+  const regex = new RegExp(targetString.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi");
+  const newText = originalText.replace(regex, replacementString);
+
+  // Convert the edited text to base64 (so it's downloadable later)
+  const buffer = Buffer.from(newText, "utf8");
+
+  // Generate a file name from the title if available, otherwise a random one
+  const fileName = ($('Update Download Links').first().json.Title || "book") + "_edited.txt";
+
+  // Push each result as a separate output item
+  outputItems.push({
+    json: {
+      Title: item.json.Title,
+      Author: item.json.Author,
+      edited: true,
+    },
+    binary: {
+      [fileName]: {
+        data: buffer.toString("base64"),
+        mimeType: "text/plain",
+        fileName,
+      },
+    },
+  });
+}
+
+// Return all processed items
+return outputItems;
+
+// --- End of Code Node ---
