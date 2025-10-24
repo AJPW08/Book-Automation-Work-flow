@@ -1,97 +1,56 @@
 // --- Start of Code Node ---
 
-
-
 // Strings to find and replace
-
 const targetString = "Project Gutenberg";
-
 const replacementString = "Wisdom ebooks Club";
 
-
-
 // Prepare an array for all processed items
-
 const outputItems = [];
 
-
-
 // Loop through all input items
-
 for (const item of $input.all()) {
 
-
-
-  // The text content is stored in `data`
-
-  const originalText = item.json.data;
-
-
+  // The text content fetched from HTTP Request
+  const originalText = item.json.data || item.json.body || "";
 
   // Skip empty or invalid data
-
   if (!originalText || typeof originalText !== "string") continue;
 
-
-
   // Replace all instances (case insensitive)
-
   const regex = new RegExp(targetString.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi");
-
   const newText = originalText.replace(regex, replacementString);
 
-
-
-  // Convert the edited text to base64 (so it's downloadable later)
-
+  // Convert the edited text to base64 (for download)
   const buffer = Buffer.from(newText, "utf8");
 
+  // ✅ Get the title from the merged data
+  let rawTitle = item.json.Title || "book";
+  const safeTitle = rawTitle
+    .replace(/[^\w\s-]/g, "")   // remove special characters
+    .replace(/\s+/g, "_")       // replace spaces with underscores
+    .trim();
 
+  const fileName = `${safeTitle}_edited.txt`;
 
-  // Generate a file name from the title if available, otherwise a random one
-
-  const fileName = (item.json.Title || "book") + "_edited.txt";
-
-
-
-  // Push each result as a separate output item
-
+  // Push each edited book as a separate binary output
   outputItems.push({
-
     json: {
-
-      Title: item.json.Title,
-
-      Author: item.json.Author,
-
+      Title: rawTitle,
+      Author: item.json.Author || "",
       edited: true,
-
+      fileName,
     },
-
     binary: {
-
-      [fileName]: {
-
+      data: {
         data: buffer.toString("base64"),
-
         mimeType: "text/plain",
-
         fileName,
-
       },
-
     },
-
   });
-
 }
 
-
-
-// Return all processed items
-
+// Return all processed files
 return outputItems;
-
-
 
 // --- End of Code Node ---
